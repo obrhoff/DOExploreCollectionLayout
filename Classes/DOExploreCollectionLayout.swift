@@ -31,7 +31,6 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
     private var cachedSize: CGSize = .zero
     private var contentSize: CGSize = .zero
     private let pageIndicatorHeight: CGFloat = 30
-    private var boundsOberver: NSKeyValueObservation?
 
     public override init() {
         super.init()
@@ -55,6 +54,7 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
     open override func invalidateLayout() {
         reset()
         buildLayout()
+        updateLayout()
         super.invalidateLayout()
     }
 
@@ -78,10 +78,11 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
 
             if section > 0 {
                 let supplementaryKind = UICollectionElementKindSectionHeader
-                let containsLastHeader = !(headerAttributes[section - 1] == nil)
-                let headerAttribute = UICollectionViewLayoutAttributes(forSupplementaryViewOfKind: supplementaryKind, with: sectionPath)
+                let headerAttribute = UICollectionViewLayoutAttributes(forSupplementaryViewOfKind: supplementaryKind,
+                                                                       with: sectionPath)
                 headerAttribute.size = CGSize(width: width, height: sectionHeaderHeight)
-                headerAttribute.frame.origin.y = currentYOffset + (containsLastHeader ? headerDistance : 0.0)
+                headerAttribute.frame.origin.x = 0
+                headerAttribute.frame.origin.y = currentYOffset + headerDistance
                 currentYOffset = headerAttribute.frame.maxY
                 beginYOffset = headerAttribute.frame.maxY
                 headerAttributes[section] = headerAttribute
@@ -123,25 +124,26 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
             itemAttributes[section] = sectionAttributes
             cachedScrollFrame[section] = sectionFrame
         }
-
         attributes += [headerAttributes, footerAttributes, decorationAttributes].flatMap({ $0.values })
         attributes += itemAttributes.flatMap({ $0.value.values })
         contentSize = CGSize(width: width, height: currentYOffset + contentInsets.bottom)
         cachedSize = collectionView?.bounds.size ?? .zero
-        boundsOberver = collectionView?.observe(\.bounds) { [weak self] _, _ in
-            self?.updateLayout()
-        }
     }
 
     internal func updateLayout() {
-        let currentBounds = collectionView?.bounds ?? .zero
+        updateLayout(newBounds: nil)
+    }
+
+    internal func updateLayout(newBounds: CGRect?) {
+        let currentBounds = newBounds ?? collectionView?.bounds ?? .zero
         adjustPageIndicators(newBounds: currentBounds)
         adjustTopHeader(newBounds: currentBounds)
-        adjustScrollViews(newBounds: currentBounds)
         adjustSections(newBounds: currentBounds)
+        adjustScrollViews(newBounds: currentBounds)
     }
 
     open override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
+        updateLayout(newBounds: newBounds)
         return !(newBounds.size.width == cachedSize.width)
     }
 
@@ -243,6 +245,7 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
 
         for removeSection in removeSections {
             guard let scrollView = attachedScrollViews.removeValue(forKey: removeSection) else { return }
+            collectionView?.removeGestureRecognizer(scrollView.panGestureRecognizer)
             cachedOffsets[removeSection] = scrollView.contentOffset
             cachedScrollViews.append(scrollView)
         }
@@ -273,7 +276,6 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
     }
 
     private func reset() {
-        boundsOberver?.invalidate()
         headerAttributes.removeAll()
         footerAttributes.removeAll()
         decorationAttributes.removeAll()
@@ -288,7 +290,7 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
     open override class var layoutAttributesClass: AnyClass {
         return DOExploreCollectionViewLayoutAttributes.self
     }
-    
+
     public var stickyHero = false {
         didSet {
             invalidateLayout()
