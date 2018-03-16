@@ -23,6 +23,7 @@ class ViewController: UIViewController {
         layout?.sectionHeaderHeight = 30
         layout?.heroHeight = 240
         layout?.itemSize = CGSize(width: 150, height: 250)
+        layout?.stickyHero = true
         layout?.delegate = self
     }
 
