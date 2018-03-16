@@ -119,7 +119,7 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
 
             let lastFrame = lastAttributes?.frame ?? .zero
             let sectionHeight = sectionAttributes.values.max(by: { $0.bounds.height > $1.bounds.height })?.bounds.height ?? 0.0
-            let sectionWidth = lastFrame.maxX + contentInsets.right
+            let sectionWidth = lastFrame.maxX + (sectionType == .normal ? contentInsets.right : 0)
             let sectionFrame = CGRect(x: 0, y: lastFrame.minY, width: sectionWidth, height: sectionHeight)
             itemAttributes[section] = sectionAttributes
             cachedScrollFrame[section] = sectionFrame
