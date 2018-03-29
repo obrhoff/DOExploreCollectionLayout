@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import DOExploreCollectionLayout
 
 class ViewController: UIViewController {
     override func loadView() {
