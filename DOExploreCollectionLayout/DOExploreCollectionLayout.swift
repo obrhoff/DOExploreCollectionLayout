@@ -54,7 +54,7 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
     open override func invalidateLayout() {
         reset()
         buildLayout()
-        updateLayout()
+        updateLayout(forced: true)
         super.invalidateLayout()
     }
 
@@ -106,6 +106,17 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
                 lastAttributes = attribute
             }
 
+            let sizeForMore = delegate?.collectionView(collectionView, layout: self, sizeForMore: section) ?? .zero
+            if rowCount > 0 && sizeForMore.equalTo(.zero) == false {
+                let supplementaryKind = UICollectionElementKindSectionFooter
+                let footerAttribute = UICollectionViewLayoutAttributes(forSupplementaryViewOfKind: supplementaryKind, with: sectionPath)
+                footerAttribute.size = sizeForMore
+                footerAttribute.frame.origin.x = (lastAttributes?.frame.maxX ?? 0) + itemDistance
+                footerAttribute.frame.origin.y = (lastAttributes?.frame.minY ?? 0)
+                footerAttributes[section] = footerAttribute
+                lastAttributes = footerAttribute
+            }
+
             currentYOffset = sectionAttributes.values.max(by: { $0.frame.maxY > $1.frame.maxY })?.frame.maxY ?? 0.0
 
             if sectionType == .hero {
@@ -130,20 +141,20 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
         cachedSize = collectionView?.bounds.size ?? .zero
     }
 
-    internal func updateLayout() {
-        updateLayout(newBounds: nil)
+    internal func updateLayout(forced: Bool) {
+        updateLayout(newBounds: nil, forced: forced)
     }
 
-    internal func updateLayout(newBounds: CGRect?) {
+    internal func updateLayout(newBounds: CGRect?, forced: Bool) {
         let currentBounds = newBounds ?? collectionView?.bounds ?? .zero
         adjustPageIndicators(newBounds: currentBounds)
         adjustTopHeader(newBounds: currentBounds)
         adjustSections(newBounds: currentBounds)
-        adjustScrollViews(newBounds: currentBounds)
+        adjustScrollViews(newBounds: currentBounds, force: forced)
     }
 
     open override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
-        updateLayout(newBounds: newBounds)
+        updateLayout(newBounds: newBounds, forced: false)
         return !(newBounds.size.width == cachedSize.width)
     }
 
@@ -219,17 +230,25 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
             if cachedOffsets[section]?.equalTo(contentOffset) == true {
                 continue
             }
-            let invalidationAttributes = itemAttributes[section]
+
+            var scrollAttributes = [UICollectionViewLayoutAttributes]()
+            if let sectionAttributes = itemAttributes[section]?.values {
+                scrollAttributes += Array(sectionAttributes)
+            }
+            if let footerAttribute = footerAttributes[section] {
+                scrollAttributes.append(footerAttribute)
+            }
+
             let sectionType = delegate?.collectionView(collectionView, layout: self, typeForSectionAt: section) ?? .normal
             let margin: CGFloat = sectionType == .normal ? contentInsets.left : 0.0
 
-            let minX = (invalidationAttributes?.reduce(CGFloat.greatestFiniteMagnitude, { currentX, attribute in
-                min(currentX, attribute.value.frame.minX)
-            }) ?? 0.0) - margin
+            let minX = scrollAttributes.reduce(CGFloat.greatestFiniteMagnitude, { currentX, attribute in
+                min(currentX, attribute.frame.minX)
+            }) - margin
 
             let offset = -contentOffset.x - minX
-            invalidationAttributes?.forEach({ attribute in
-                attribute.value.frame = attribute.value.frame.offsetBy(dx: offset, dy: 0.0)
+            scrollAttributes.forEach({
+                $0.frame = $0.frame.offsetBy(dx: offset, dy: 0.0)
             })
             cachedOffsets[section] = contentOffset
             delegate?.collectionView(collectionView, layout: self, section: section, scrollOffset: contentOffset)
@@ -238,7 +257,7 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
         invalidateLayout(with: context)
     }
 
-    private func adjustScrollViews(newBounds: CGRect) {
+    private func adjustScrollViews(newBounds: CGRect, force: Bool) {
         let visibleSections = self.visibleSections(in: newBounds)
         let addSections = visibleSections.filter({ !attachedScrollViews.keys.contains($0) })
         let removeSections = attachedScrollViews.filter({ !visibleSections.contains($0.key) }).map({ $0.key })
@@ -250,7 +269,7 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
             cachedScrollViews.append(scrollView)
         }
 
-        for addSection in addSections {
+        for addSection in force ? visibleSections : addSections {
             let sectionType = delegate?.collectionView(collectionView, layout: self, typeForSectionAt: addSection) ?? .normal
             let scrollView = cachedScrollViews.popLast() ?? DOScrollView(frame: .zero)
             scrollView.frame = collectionView?.bounds ?? .zero
@@ -272,7 +291,7 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
     }
 
     public func scrollViewDidScroll(_: UIScrollView) {
-        updateLayout()
+        updateLayout(forced: false)
     }
 
     private func reset() {

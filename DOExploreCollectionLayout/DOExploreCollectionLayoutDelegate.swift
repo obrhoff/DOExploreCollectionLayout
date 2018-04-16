@@ -10,6 +10,9 @@ import Foundation
 import UIKit
 
 public protocol DOExploreCollectionLayoutDelegate: class {
+    func collectionView(_: UICollectionView?, layout _: DOExploreCollectionLayout, sizeForMore section: Int)
+        -> CGSize
+
     func collectionView(_: UICollectionView?, layout _: DOExploreCollectionLayout, typeForSectionAt section: Int)
         -> DOSectionType
 
@@ -23,6 +26,9 @@ public protocol DOExploreCollectionLayoutDelegate: class {
 }
 
 public extension DOExploreCollectionLayoutDelegate {
+    func collectionView(_: UICollectionView?, layout _: DOExploreCollectionLayout, sizeForMore section: Int)
+        -> CGSize { return .zero }
+
     func collectionView(_: UICollectionView?, layout: DOExploreCollectionLayout,
                         sizeForItemAt _: IndexPath) -> CGSize { return layout.itemSize }
 

@@ -32,7 +32,7 @@ internal final class DOExplorePagerView: UICollectionReusableView {
         super.didMoveToSuperview()
         pageIndicator.pageIndicatorTintColor = layoutAttribute?.layout?.pageIndicatorTintColor
         pageIndicator.currentPageIndicatorTintColor = layoutAttribute?.layout?.currentPageIndicatorTintColor
-        layoutAttribute?.layout?.updateLayout()
+        layoutAttribute?.layout?.updateLayout(forced: false)
     }
 
     override func layoutSubviews() {
