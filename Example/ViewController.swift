@@ -6,8 +6,8 @@
 //  Copyright © 2018 Dennis Oberhoff. All rights reserved.
 //
 
-import UIKit
 import DOExploreCollectionLayout
+import UIKit
 
 class ViewController: UIViewController {
     override func loadView() {

@@ -137,6 +137,13 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
         }
         attributes += [headerAttributes, footerAttributes, decorationAttributes].flatMap({ $0.values })
         attributes += itemAttributes.flatMap({ $0.value.values })
+
+        let keepScrollKey = Set(attributes.map({ $0.indexPath.section }))
+        cachedScrollFrame.filter({ !keepScrollKey.contains($0.key) }).forEach({
+            cachedScrollFrame.removeValue(forKey: $0.key)
+            cachedOffsets.removeValue(forKey: $0.key)
+        })
+
         contentSize = CGSize(width: width, height: currentYOffset + contentInsets.bottom)
         cachedSize = collectionView?.bounds.size ?? .zero
     }
@@ -149,8 +156,8 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
         let currentBounds = newBounds ?? collectionView?.bounds ?? .zero
         adjustPageIndicators(newBounds: currentBounds)
         adjustTopHeader(newBounds: currentBounds)
-        adjustSections(newBounds: currentBounds)
         adjustScrollViews(newBounds: currentBounds, force: forced)
+        adjustSections(newBounds: currentBounds)
     }
 
     open override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
@@ -227,10 +234,6 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
         for section in visibleSections(in: newBounds) {
             let scrollView = attachedScrollViews[section]
             let contentOffset = scrollView?.contentOffset ?? .zero
-            if cachedOffsets[section]?.equalTo(contentOffset) == true {
-                continue
-            }
-
             var scrollAttributes = [UICollectionViewLayoutAttributes]()
             if let sectionAttributes = itemAttributes[section]?.values {
                 scrollAttributes += Array(sectionAttributes)
@@ -265,7 +268,6 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
         for removeSection in removeSections {
             guard let scrollView = attachedScrollViews.removeValue(forKey: removeSection) else { return }
             collectionView?.removeGestureRecognizer(scrollView.panGestureRecognizer)
-            cachedOffsets[removeSection] = scrollView.contentOffset
             cachedScrollViews.append(scrollView)
         }
 
