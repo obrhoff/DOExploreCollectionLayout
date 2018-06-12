@@ -154,10 +154,10 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
 
     internal func updateLayout(newBounds: CGRect?, forced: Bool) {
         let currentBounds = newBounds ?? collectionView?.bounds ?? .zero
-        adjustPageIndicators(newBounds: currentBounds)
-        adjustTopHeader(newBounds: currentBounds)
         adjustScrollViews(newBounds: currentBounds, force: forced)
         adjustSections(newBounds: currentBounds)
+        adjustTopHeader(newBounds: currentBounds)
+        adjustPageIndicators(newBounds: currentBounds)
     }
 
     open override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
@@ -177,6 +177,11 @@ open class DOExploreCollectionLayout: UICollectionViewLayout, UIScrollViewDelega
 
     open override func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
         return itemAttributes[indexPath.section]?[indexPath.row]
+    }
+
+    open override func finalizeCollectionViewUpdates() {
+        super.finalizeCollectionViewUpdates()
+        updateLayout(forced: false)
     }
 
     open override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
