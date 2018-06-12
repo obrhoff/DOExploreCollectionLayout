@@ -5,7 +5,7 @@ Pod::Spec.new do |s|
   s.homepage = "https://github.com/docterd/DOExploreCollectionLayout"
   s.license = { :type => "MIT" }
   s.author = { "Dennis Oberhoff" => "dennis@obrhoff.de" }
-  s.source = { :git => "https://github.com/docterd/DOExploreCollectionLayout.git", :tag => "1.2"}
+  s.source = { :git => "https://github.com/docterd/DOExploreCollectionLayout.git", :tag => "1.2.2"}
   s.source_files = "DOExploreCollectionLayout/*.swift"
   s.ios.deployment_target = "11.0"
   s.ios.framework  = 'UIKit'
